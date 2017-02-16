@@ -23,25 +23,25 @@ hostent;
 typedef struct servent
 servent;
 
+int connected = 1;
+
 void recieve_m(int socket_descriptor)
 {
     //system("xterm");
     int longueur;
     char buffer[256];
 
-    while(1)
+    while(connected)
     {
-        // clear buffer
-
         longueur = read(socket_descriptor, buffer, sizeof(buffer));
 
         if (longueur > 0)
         {
-            printf("\n ### \n");
             write(1,buffer,longueur);
-            printf("\n ### \n");
+            printf("\n");
         }
     }
+    printf("Déconnecté de la reception.\n");
 
 }
 
@@ -50,12 +50,12 @@ void send_m(int socket_descriptor)
     int longueur;
     char msg[256];
 
-    while(1)
-    {
-        //clear buffer
+   
 
-        printf("Saisissez un message : ");
-        scanf("%s",msg);
+    while(connected)
+    {   
+
+        gets(msg);
 
         if ((write(socket_descriptor, msg, strlen(msg))) < 0)
         {
@@ -63,8 +63,12 @@ void send_m(int socket_descriptor)
             exit(1);
         }
 
-        if (msg == "/quit")
+        if (strcmp(msg,"/quit") == 0)
+        {
+            connected = 0;
+            printf("Déconnecté de l'envoi.\n");
             return;
+        }
     }
 
 
@@ -92,15 +96,19 @@ int main(int argc, char **argv) {
 
     if (argc != 3)
     {
-        perror("usage : client <adresse-serveur> <message-a-transmettre>");
+        perror("usage : client <adresse-serveur> <pseudo>");
         exit(1);
     }
 
     prog = argv[0];
     host = argv[1];
     pseudo = argv[2];
-
-    //mesg = argv[2];
+ 
+    if (strlen(pseudo) > 15)
+    {
+        perror("pseudo trop long, 15 char max");
+        exit(1);
+    }
 
     printf("nom de l'executable : %s \n", prog);
     printf("adresse du serveur  : %s \n", host);
@@ -121,7 +129,7 @@ int main(int argc, char **argv) {
     adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 
 
-    /* 2 facons de definir le service que l'on va utiliser a distance (lemême que sur le serveur) */
+    /* 2 facons de definir le service que l'on va utiliser a distance (le même que sur le serveur) */
     /* (commenter l'une ou l'autre des solutions) */
     /*-----------------------------------------------------------*/
     /* SOLUTION 1 : utiliser un service existant, par ex. "irc" */
@@ -146,7 +154,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    /* tentative de connexion au serveur dont les infos sont dans adresse_locale */
+    /* tentative de connexion au serveur dont les infos sont dans
+adresse_locale */
     if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale), sizeof(adresse_locale))) < 0)
     {
         perror("erreur : impossible de se connecter au serveur.");
@@ -156,16 +165,14 @@ int main(int argc, char **argv) {
     printf("connexion etablie avec le serveur. \n");
     printf("envoi d'un message au serveur. \n");
 
-    if ((write(socket_descriptor, mesg, strlen(mesg))) < 0)
+    if ((write(socket_descriptor, pseudo, strlen(pseudo))) < 0)
     {
         perror("erreur : impossible d'ecrire le message destine au serveur.");
         exit(1);
     }
 
-    //clear buffer
-
-    pthread_create(&reception,NULL,recieve_m,(void *)socket_descriptor);
-    pthread_create(&envoi,NULL,send_m,(void *)socket_descriptor);
+    pthread_create(&reception,NULL,recieve_m,(int *)socket_descriptor);
+    pthread_create(&envoi,NULL,send_m,(int *)socket_descriptor);
 
     /* mise en attente du prgramme pour simuler un delai de transmission */
     sleep(3);
