@@ -32,9 +32,80 @@ void deconnexion(inttab* sockets,int ind)
     --sockets->taille;
 }
 
+char* replace_offensive_words(char* str)
+{
+    const char s[2] = " ";
+    char *token;
+    char temp[256];
+
+
+    char* final_string = malloc(256 * sizeof(char));
+    final_string = memmove(final_string,"(corrected) ",12);
+
+    printf("Original string : %s\n",str);
+
+    printf("final string before : %s\n",final_string);
+
+    token = strtok(str, s);
+
+    printf(" token : %s.\n",token);
+
+    static const char filename[] = "offensive_words.txt";
+    FILE *file = fopen (filename, "r" );
+
+    if (file != NULL)
+    {
+        char line[256];
+        char *offWord;
+
+        token = strtok(str, s);
+ 
+        while (token != NULL) 
+        {
+            printf("into while 1\n token : %s\n", token);
+
+            while (fgets(line,sizeof line,file) != NULL) 
+            {
+                printf("into while 2\n line : %s.\n", line);
+                offWord = strtok(line,"\n");
+
+                if (strcmp(token,offWord) == 0)
+                {
+                    printf("Offensive word found : %s\n",token);
+
+                    int i;
+                    for(i=0;i<strlen(temp)-1;++i)
+                    {
+                        temp[i] = '*';
+                    }
+
+                    printf("Modified token : %s\n",temp);                   
+                }
+            }
+
+            final_string = strcat(final_string, temp);
+            printf("final string : %s\n",final_string);
+
+            token = strtok(NULL, s);
+
+            printf("New token : %s\n",token);
+        }
+
+        fclose (file);
+    }
+    else
+    {
+      perror("file not found"); 
+    }
+
+
+    return final_string;
+
+   
+}
+
 
 /*------------------------------------------------------*/
-
 
 void renvoi (inttab* sockets)
 {
@@ -49,7 +120,7 @@ void renvoi (inttab* sockets)
     char pseudo[256];
     char npseu[256];
 
-    char* connexion = malloc(256);
+    char* connexion = malloc(256 * sizeof(char));
 
     int longueur;
 
@@ -70,15 +141,8 @@ void renvoi (inttab* sockets)
 
     strcpy(stockB,buffer);
 
-    printf("ind : %d\n", ind);
     sockets->pseudos[ind] = malloc(15 * sizeof(char));
     strcpy(sockets->pseudos[ind],buffer);
-
-    int m;
-    for (m=0;m<sockets->taille;++m)
-    {
-        printf("pseudo tab : %s\n",sockets->pseudos[m]);
-    }
 
     strcat(buffer, " : ");
     strcpy(pseudo,buffer);
@@ -105,7 +169,7 @@ void renvoi (inttab* sockets)
             {
                 char key[3];
                 char dest[16];
-                char whisper[256];
+                char* whisper = malloc(256*sizeof(char));
 
                 sscanf(buffer,"%s %s %*s", key, dest);
 
@@ -123,6 +187,7 @@ void renvoi (inttab* sockets)
 
                 if (destfound)
                 {
+                    printf("Before discarding \n");
                     int discardlength = strlen(key)+strlen(dest)+2;
                     int l;
                     for (l=0;l<strlen(buffer)-discardlength;++l)
@@ -130,6 +195,8 @@ void renvoi (inttab* sockets)
                         whisper[l] = buffer[l+discardlength];
                     }
 
+                    printf("Before removing \n");
+                    whisper = replace_offensive_words(whisper);
 
                     msg = malloc((20+strlen(sockets->pseudos[inddest])+strlen(whisper)+1) * sizeof(char));
 
