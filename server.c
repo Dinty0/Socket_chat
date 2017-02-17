@@ -196,7 +196,7 @@ void renvoi (inttab* sockets)
                     }
 
                     printf("Before removing \n");
-                    whisper = replace_offensive_words(whisper);
+                    //whisper = replace_offensive_words(whisper);
 
                     msg = malloc((20+strlen(sockets->pseudos[inddest])+strlen(whisper)+1) * sizeof(char));
 
@@ -211,7 +211,7 @@ void renvoi (inttab* sockets)
                 }
                 else
                 {
-                    write(sockets->tab[ind],"### Utilisateur non trouve ###",22);
+                    write(sockets->tab[ind],"### Utilisateur non trouve ###",30);
                 }
 
             }
