@@ -3,4 +3,4 @@ other features :
 Anti-spam : Compteur de spam dans la structure de données
 2 profils : admin et user, admin ayant commande /kick /ban (/mute ?) -> ajout d'un tableau "statut" dans la SDD
 Transfert de fichier : simulation de transfert d'emoticone
-Auto-sanction : Au bout d'un certain nombre de mots offensif : warning puis kick -> ajout d'un tableau "offensive_cpt" dans la SDD
+DONE : (Auto-sanction : Au bout d'un certain nombre de mots offensif : warning puis kick -> ajout d'un tableau "offensive_cpt" dans la SDD)
