@@ -3,52 +3,47 @@ Serveur à lancer avant le client
 ------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
-#include <linux/types.h> /* pour les sockets */
+#include <linux/types.h> /* pour les users */
 #include <sys/socket.h>
 #include <netdb.h> /* pour hostent, servent */
 #include <string.h> /* pour bcopy, ... */
-#define TAILLE_MAX_NOM 256
+#define nb_MAX_NOM 256
 
 typedef struct sockaddr sockaddr;
 typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
 
-typedef struct inttab
+typedef struct map
 {
-    int* tab;
+    int* sockets;
     char** pseudos;
-    int taille;
-} inttab;
+    int* status;
+    int nb;
+} map;
 
-void deconnexion(inttab* sockets,int ind)
+void deconnexion(map* users,int ind)
 {
     int i;
-    for (i=ind;i<sockets->taille-1;++i)
+    for (i=ind;i<users->nb-1;++i)
     {
-        sockets->tab[i]=sockets->tab[i+1];    
+        users->sockets[i]=users->sockets[i+1];    
     }
-    //free(sockets->tab[sockets->taille-1]);
-    --sockets->taille;
+    //free(users->sockets[users->nb-1]);
+    --users->nb;
 }
 
 char* replace_offensive_words(char* str)
 {
     const char s[2] = " ";
-    char *token;
+    char *token = (char*) malloc(256*sizeof(char));
     char temp[256];
 
 
     char* final_string = malloc(256 * sizeof(char));
     final_string = memmove(final_string,"(corrected) ",12);
 
-    printf("Original string : %s\n",str);
-
-    printf("final string before : %s\n",final_string);
-
     token = strtok(str, s);
-
-    printf(" token : %s.\n",token);
 
     static const char filename[] = "offensive_words.txt";
     FILE *file = fopen (filename, "r" );
@@ -56,39 +51,35 @@ char* replace_offensive_words(char* str)
     if (file != NULL)
     {
         char line[256];
-        char *offWord;
-
-        token = strtok(str, s);
+        char *offWord = (char*) malloc(256*sizeof(char));
  
         while (token != NULL) 
         {
-            printf("into while 1\n token : %s\n", token);
+            strcpy(temp,token);
 
             while (fgets(line,sizeof line,file) != NULL) 
             {
-                printf("into while 2\n line : %s.\n", line);
-                offWord = strtok(line,"\n");
+                memset(offWord,'\0',sizeof(offWord));
+                memmove(offWord,line,strlen(line)-1);
 
                 if (strcmp(token,offWord) == 0)
                 {
                     printf("Offensive word found : %s\n",token);
 
                     int i;
-                    for(i=0;i<strlen(temp)-1;++i)
+                    for(i=0;i<strlen(temp);++i)
                     {
                         temp[i] = '*';
-                    }
-
-                    printf("Modified token : %s\n",temp);                   
+                    }              
                 }
             }
 
+            rewind(file);
+
             final_string = strcat(final_string, temp);
-            printf("final string : %s\n",final_string);
+            final_string = strcat(final_string, " ");
 
             token = strtok(NULL, s);
-
-            printf("New token : %s\n",token);
         }
 
         fclose (file);
@@ -107,12 +98,12 @@ char* replace_offensive_words(char* str)
 
 /*------------------------------------------------------*/
 
-void renvoi (inttab* sockets)
+void renvoi (map* users)
 {
-    printf("Nombre de clients : %d\n",sockets->taille);
+    printf("Nombre de clients : %d\n",users->nb);
 
-    int client = sockets->tab[sockets->taille-1];
-    int ind = sockets->taille-1;
+    int client = users->sockets[users->nb-1];
+    int ind = users->nb-1;
 
     char buffer[256];
     char stockB[256];
@@ -134,15 +125,15 @@ void renvoi (inttab* sockets)
     connexion = strcat(connexion,".\n");
 
     int i;
-    for (i=0;i<sockets->taille;++i)
+    for (i=0;i<users->nb;++i)
     {
-        write(sockets->tab[i],connexion,strlen(connexion));
+        write(users->sockets[i],connexion,strlen(connexion));
     }
 
     strcpy(stockB,buffer);
 
-    sockets->pseudos[ind] = malloc(15 * sizeof(char));
-    strcpy(sockets->pseudos[ind],buffer);
+    users->pseudos[ind] = malloc(15 * sizeof(char));
+    strcpy(users->pseudos[ind],buffer);
 
     strcat(buffer, " : ");
     strcpy(pseudo,buffer);
@@ -163,7 +154,7 @@ void renvoi (inttab* sockets)
             {
                 msg = malloc(55 * sizeof(char));
                 memmove(msg,"Type </w> <pseudo dest> <private message> to whisper !",54);
-                write(sockets->tab[ind],msg,strlen(msg));
+                write(users->sockets[ind],msg,strlen(msg));
             }
             else if (buffer[0]=='/' && buffer[1]=='w' && buffer[2]==' ')
             {
@@ -176,9 +167,9 @@ void renvoi (inttab* sockets)
                 int inddest;
                 int k;
                 int destfound = 0;
-                for (k=0;k<sockets->taille;++k)
+                for (k=0;k<users->nb;++k)
                 {
-                    if (strcmp(sockets->pseudos[k],dest) == 0)
+                    if (strcmp(users->pseudos[k],dest) == 0)
                     {   
                         inddest = k;
                         destfound = 1;
@@ -187,7 +178,6 @@ void renvoi (inttab* sockets)
 
                 if (destfound)
                 {
-                    printf("Before discarding \n");
                     int discardlength = strlen(key)+strlen(dest)+2;
                     int l;
                     for (l=0;l<strlen(buffer)-discardlength;++l)
@@ -195,23 +185,22 @@ void renvoi (inttab* sockets)
                         whisper[l] = buffer[l+discardlength];
                     }
 
-                    printf("Before removing \n");
-                    //whisper = replace_offensive_words(whisper);
+                    whisper = replace_offensive_words(whisper);
 
-                    msg = malloc((20+strlen(sockets->pseudos[inddest])+strlen(whisper)+1) * sizeof(char));
+                    msg = malloc((20+strlen(users->pseudos[inddest])+strlen(whisper)+1) * sizeof(char));
 
                     memmove(msg,"(whisper from ",14);
 
-                    msg = strcat(msg,sockets->pseudos[ind]);
+                    msg = strcat(msg,users->pseudos[ind]);
                     msg = strcat(msg,") : ");
                     msg = strcat(msg,whisper);
 
-                    write(sockets->tab[inddest],msg,strlen(msg));
+                    write(users->sockets[inddest],msg,strlen(msg));
 
                 }
                 else
                 {
-                    write(sockets->tab[ind],"### Utilisateur non trouve ###",30);
+                    write(users->sockets[ind],"### Utilisateur non trouve ###",30);
                 }
 
             }
@@ -240,10 +229,12 @@ void renvoi (inttab* sockets)
                     memmove(pseudo,npseu,strlen(npseu));
                 }
 
+                msg = replace_offensive_words(msg);
+
                 int j;
-                for (j=0; j<sockets->taille; ++j)
+                for (j=0; j<users->nb; ++j)
                 {
-                    write(sockets->tab[j],msg, strlen(msg));
+                    write(users->sockets[j],msg, strlen(msg));
                 }
             }
 
@@ -255,7 +246,7 @@ void renvoi (inttab* sockets)
 
     }
 
-    deconnexion(sockets,ind);
+    deconnexion(users,ind);
     printf("### Déconnexion de : %s",npseu);
     printf(". ###\n");
 
@@ -271,14 +262,14 @@ main(int argc, char **argv)
         nouv_socket_descriptor, /* [nouveau] descripteur de socket */
         longueur_adresse_courante; /* longueur d'adresse courante d'un client */
 
-    inttab sockets;
-    inttab* psockets = &sockets;
-    int taillemax = 2;
-    sockets.taille = 0;
-    sockets.tab = (int*)malloc(taillemax * sizeof(int));
+    map users;
+    map* pusers = &users;
+    int nbmax = 2;
+    users.nb = 0;
+    users.sockets = (int*)malloc(nbmax * sizeof(int));
 
-    //tableau de chaines de 15 caractères max
-    sockets.pseudos = malloc(taillemax * 15 * sizeof(char));
+    //socketsleau de chaines de 15 caractères max
+    users.pseudos = malloc(nbmax * 15 * sizeof(char));
 
     pthread_t thread;
 
@@ -287,9 +278,9 @@ main(int argc, char **argv)
     hostent* ptr_hote; /* les infos recuperees sur la machine hote */
     servent* ptr_service; /* les infos recuperees sur le service de la machine */
 
-    char machine[TAILLE_MAX_NOM+1]; /* nom de la machine locale */
+    char machine[nb_MAX_NOM+1]; /* nom de la machine locale */
 
-    gethostname(machine,TAILLE_MAX_NOM); /* recuperation du nom de la machine */
+    gethostname(machine,nb_MAX_NOM); /* recuperation du nom de la machine */
 
     /* recuperation de la structure d'adresse en utilisant le nom */
     if ((ptr_hote = gethostbyname(machine)) == NULL)
@@ -354,28 +345,28 @@ main(int argc, char **argv)
         }
         else
         {
-            if (sockets.taille == taillemax)
+            if (users.nb == nbmax)
             {
-                int* nvtab = (int*)malloc(sockets.taille*2 * sizeof(int));
-                char** nvpseudo = malloc(sockets.taille*2 * 15* sizeof(char));
+                int* nvsockets = (int*)malloc(users.nb*2 * sizeof(int));
+                char** nvpseudo = malloc(users.nb*2 * 15* sizeof(char));
                 int i;
-                for (i=0; i<taillemax; ++i)
+                for (i=0; i<nbmax; ++i)
                 {
-                    nvtab[i] = sockets.tab[i];
-                    nvpseudo[i] = sockets.pseudos[i];
+                    nvsockets[i] = users.sockets[i];
+                    nvpseudo[i] = users.pseudos[i];
                 }
 
-                sockets.tab = nvtab;
-                sockets.pseudos = nvpseudo;
-                taillemax = sockets.taille*2;
+                users.sockets = nvsockets;
+                users.pseudos = nvpseudo;
+                nbmax = users.nb*2;
             }
 
-            sockets.tab[sockets.taille] = nouv_socket_descriptor;
-            sockets.taille++;
+            users.sockets[users.nb] = nouv_socket_descriptor;
+            users.nb++;
         }
 
         /* traitement du message */
-        if (pthread_create(&thread,NULL,renvoi,(int *)psockets))
+        if (pthread_create(&thread,NULL,renvoi,(int *)pusers))
         {
             printf("Erreur pthread_create");
         }

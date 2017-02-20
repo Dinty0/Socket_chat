@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     if (strlen(pseudo) > 15)
     {
         perror("pseudo trop long, 15 char max");
-        exit(1);
+        exit(0);
     }
 
     printf("nom de l'executable : %s \n", prog);
