@@ -3,13 +3,14 @@ Client a lancer apres le serveur avec la commande :
 client <adresse-serveur> <message-a-transmettre>
 ------------------------------------------------------------*/
 #include <stdlib.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <linux/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
 
 #include <pthread.h>
+#include <ncurses.h>
 
 typedef struct sockaddr
 sockaddr;
@@ -45,17 +46,27 @@ void recieve_m(int socket_descriptor)
 
 }
 
+void reset_cache()
+{
+    int c;
+    do {
+        c = getchar();
+    } while (c != '\n' && c != EOF);
+}
+
 void send_m(int socket_descriptor)
 {
     int longueur;
     char msg[256];
 
-   
-
     while(connected)
     {   
+        fgets(msg,256,stdin);
 
-        gets(msg);
+        if (strlen(msg) >= 255)
+        {
+            reset_cache();           
+        }
 
         if ((write(socket_descriptor, msg, strlen(msg))) < 0)
         {
@@ -80,6 +91,23 @@ int main(int argc, char **argv) {
 
     pthread_t reception;
     pthread_t envoi;
+
+    // WINDOW *haut, *bas;
+    // initscr();
+    // haut= subwin(stdscr, LINES / 2, COLS, 0, 0);        // Créé une fenêtre de 'LINES / 2' lignes et de COLS colonnes en 0, 0
+    // bas= subwin(stdscr, LINES / 2, COLS, LINES / 2, 0); // Créé la même fenêtre que ci-dessus sauf que les coordonnées changent
+    
+    // box(haut, ACS_VLINE, ACS_HLINE);
+    // box(bas, ACS_VLINE, ACS_HLINE);
+    
+    // mvwprintw(haut, 1, 1, "Ceci est la fenetre du haut");
+    // mvwprintw(bas, 1, 1, "Ceci est la fenetre du bas");
+    
+    // wrefresh(haut);
+    // wrefresh(bas);
+    
+    // getch();
+    // endwin();
 
     int socket_descriptor,  /* descripteur de socket */
         longueur;   /* longueur d'un buffer utilisé */
