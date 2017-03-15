@@ -20,6 +20,7 @@ typedef struct map
     char** pseudos;
     int* status;
     int* cpt_offWords;
+    int* warned;
     int nb;
 } map;
 
@@ -40,7 +41,6 @@ char* replace_offensive_words(char* str, map* users, int indUser)
     char *token = (char*) malloc(256*sizeof(char));
     char temp[256];
     int offensive = 0;
-
 
     char* final_string = malloc(256 * sizeof(char));
 
@@ -115,6 +115,7 @@ void renvoi (map* users)
     int ind = users->nb-1;
     //users->status[ind] = 0;
     users->cpt_offWords[ind] =0;
+    users->warned[ind] = 0;
 
     char buffer[256];
     char stockB[256];
@@ -157,14 +158,16 @@ void renvoi (map* users)
 
         longueur = read(client, buffer, sizeof(buffer));
 
+        buffer[strlen(buffer)-1] = '\0';
+
         if (longueur > 0)
         {
             char* msg = NULL;
 
             if (strcmp(buffer,"!help") == 0)
             {
-                msg = malloc(55 * sizeof(char));
-                memmove(msg,"Type </w> <pseudo dest> <private message> to whisper !",54);
+                msg = malloc(110 * sizeof(char));
+                memmove(msg,"Type </w> <pseudo dest> <private message> to whisper ! # warning : whispers must not be longer than 256 char #",110);
                 write(users->sockets[ind],msg,strlen(msg));
             }
             // PRIVATE MESSAGE
@@ -172,7 +175,7 @@ void renvoi (map* users)
             {
                 char key[3];
                 char dest[16];
-                char* whisper = malloc(256*sizeof(char));
+                char* whisper = (char*)malloc(256*sizeof(char));
 
                 sscanf(buffer,"%s %s %*s", key, dest);
 
@@ -258,26 +261,45 @@ void renvoi (map* users)
         }
 
         // AUTO KICK FOR OFFENSIVE LANGUAGE
-        if (users->cpt_offWords[ind] >= 1 && users->cpt_offWords[ind] < 4)
+        if (users->cpt_offWords[ind] >= 1 && users->cpt_offWords[ind] < 4 && users->warned[ind] != 1)
         {
             char* warning = (char*)malloc(70*sizeof(char));
-            warning = "### WARNING : Do not use offensive words or you'll get kicked ! ###";
-            write(users->sockets[ind],warning, strlen(warning));
-        }
-        if (users->cpt_offWords[ind] == 4)
-        {
-            char* warning = (char*)malloc(75*sizeof(char));
-            warning = "### LAST WARNING : Do not use offensive words or you'll get kicked ! ###";
-            write(users->sockets[ind],warning, strlen(warning));
-        }
-        if (users->cpt_offWords[ind] >= 5)
-        {
-            char* warning = (char*)malloc(75*sizeof(char));
-            warning = "### KICKED. (cause : Offensive language) ###";
+            warning = "\n### WARNING : Do not use offensive words or you'll get kicked ! ###";
             write(users->sockets[ind],warning, strlen(warning));
 
-            printf("### %s has been kicked. (cause : Offensive language). ###\n",users->pseudos[ind]);
+            users->warned[ind] = 1;
+        }
+        if (users->cpt_offWords[ind] == 4 && users->warned[ind] !=2)
+        {
+            char* warning = (char*)malloc(75*sizeof(char));
+            warning = "\n### LAST WARNING : Do not use offensive words or you'll get kicked ! ###";
+            write(users->sockets[ind],warning, strlen(warning));
+
+            users->warned[ind] = 2;
+        }
+        if (users->cpt_offWords[ind] >= 5 && users->warned[ind] == 2)
+        {
+            char* warning = (char*)malloc(75*sizeof(char));
+            warning = "\n### KICKED. (cause : Offensive language) ###";
+            write(users->sockets[ind],warning, strlen(warning));
+
+            char* kickan = (char*)malloc((60+strlen(users->pseudos[ind])) *sizeof(char));
+
+            // Preparation of the kick announcement
+            memmove(kickan,"\n### ",6);
+            kickan = strcat(kickan,users->pseudos[ind]);
+            kickan = strcat(kickan," has been kicked. (cause : Offensive language). ###\n");
+
+            printf("kickan : %s",kickan);
+
             deconnexion(users,ind);
+
+            // Kick announcement
+            int m;
+            for (m=0; m<users->nb; ++m)
+            {
+                write(users->sockets[m],kickan, strlen(kickan));
+            }
 
             return;
         }
@@ -309,6 +331,7 @@ main(int argc, char **argv)
     //socketsleau de chaines de 15 caractères max
     users.pseudos = (char**)malloc(nbmax * 15 * sizeof(char));
     users.cpt_offWords = (int*)malloc(nbmax * sizeof(int));
+    users.warned = (int*)malloc(nbmax * sizeof(int));
 
 
     pthread_t thread;

@@ -74,12 +74,14 @@ void send_m(int socket_descriptor)
             exit(1);
         }
 
-        if (strcmp(msg,"/quit") == 0)
+        if (strcmp(msg,"/quit" ) == 10)
         {
             connected = 0;
             printf("Déconnecté de l'envoi.\n");
             return;
         }
+
+
     }
 
 
