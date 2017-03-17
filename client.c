@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     if (argc != 3)
     {
         perror("usage : client <adresse-serveur> <pseudo>");
-        exit(1);
+        exit(0);
     }
 
     prog = argv[0];
@@ -140,19 +140,11 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
-    printf("nom de l'executable : %s \n", prog);
-    printf("adresse du serveur  : %s \n", host);
-    printf("Pseudonyme      : %s \n", pseudo);
-
-
-
     if ((ptr_host = gethostbyname(host)) == NULL)
     {
         perror("erreur : impossible de trouver le serveur a partir de son adresse.");
         exit(1);
     }
-
-    printf("hostent : %s \n", (char *)ptr_host);
 
     /* copie caractere par caractere des infos de ptr_host vers adresse_locale */
     bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale.sin_addr, ptr_host->h_length);
@@ -175,7 +167,6 @@ int main(int argc, char **argv) {
     adresse_locale.sin_port = htons(5001);
     /*-----------------------------------------------------------*/
 
-    printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale.sin_port));
 
     /* creation de la socket */
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -192,14 +183,13 @@ adresse_locale */
         exit(1);
     }
 
-    printf("connexion etablie avec le serveur. \n");
-    printf("envoi d'un message au serveur. \n");
-
     if ((write(socket_descriptor, pseudo, strlen(pseudo))) < 0)
     {
         perror("erreur : impossible d'ecrire le message destine au serveur.");
         exit(1);
     }
+
+    printf("Welcome %s ! (server adress : %s:%d\n",pseudo,host,ntohs(adresse_locale.sin_port));
 
     pthread_create(&reception,NULL,recieve_m,(int *)socket_descriptor);
     pthread_create(&envoi,NULL,send_m,(int *)socket_descriptor);

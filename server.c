@@ -160,7 +160,9 @@ void renvoi (map* users)
 
         buffer[strlen(buffer)-1] = '\0';
 
-        if (longueur > 0)
+        printf("allo le monde : %d\n",strcmp(buffer,'\n'));
+
+        if (longueur > 0 || strcmp(buffer,'\n') == 0)
         {
             char* msg = NULL;
 
