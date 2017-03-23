@@ -18,7 +18,7 @@ typedef struct map
 {
     int* sockets;
     char** pseudos;
-    int* status;
+    //int* status;
     int* cpt_offWords;
     int* warned;
     int nb;
@@ -30,6 +30,9 @@ void deconnexion(map* users,int ind)
     for (i=ind;i<users->nb-1;++i)
     {
         users->sockets[i]=users->sockets[i+1];    
+        users->pseudos[i]=users->pseudos[i+1];
+        users->cpt_offWords[i]=users->cpt_offWords[i+1];
+        users->warned[i]=users->warned[i+1];
     }
     //free(users->sockets[users->nb-1]);
     --users->nb;
