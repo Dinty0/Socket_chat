@@ -160,9 +160,7 @@ void renvoi (map* users)
 
         buffer[strlen(buffer)-1] = '\0';
 
-        printf("allo le monde : %d\n",strcmp(buffer,'\n'));
-
-        if (longueur > 0 || strcmp(buffer,'\n') == 0)
+        if (longueur > 0)
         {
             char* msg = NULL;
 
@@ -279,7 +277,7 @@ void renvoi (map* users)
 
             users->warned[ind] = 2;
         }
-        if (users->cpt_offWords[ind] >= 5 && users->warned[ind] == 2)
+        if (users->cpt_offWords[ind] >= 5)
         {
             char* warning = (char*)malloc(75*sizeof(char));
             warning = "\n### KICKED. (cause : Offensive language) ###";
