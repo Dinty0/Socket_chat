@@ -416,20 +416,20 @@ main(int argc, char **argv)
                 int* nvsockets = (int*)malloc(users.nb*2 * sizeof(int));
                 char** nvpseudo = (char**)malloc(users.nb*2 * 15* sizeof(char));
                 int* nvcpt_offWords = (int*)malloc(users.nb*2 * sizeof(int));
-                int* nvstatus = (int*)malloc(users.nb*2 * sizeof(int));
+                //int* nvstatus = (int*)malloc(users.nb*2 * sizeof(int));
                 int i;
                 for (i=0; i<nbmax; ++i)
                 {
                     nvsockets[i] = users.sockets[i];
                     nvpseudo[i] = users.pseudos[i];
                     nvcpt_offWords[i] = users.cpt_offWords[i];
-                    nvstatus[i] = users.status[i];
+                    //nvstatus[i] = users.status[i];
                 }
 
                 users.sockets = nvsockets;
                 users.pseudos = nvpseudo;
                 users.cpt_offWords = nvcpt_offWords;
-                users.status = nvstatus;
+                //users.status = nvstatus;
 
                 nbmax = users.nb*2;
             }
