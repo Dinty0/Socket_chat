@@ -18,7 +18,7 @@ typedef struct map
 {
     int* sockets;
     char** pseudos;
-    //int* status;
+    //int* status; // Extension possibles
     int* cpt_offWords;
     int* warned;
     int nb;
