@@ -3,14 +3,13 @@ Client a lancer apres le serveur avec la commande :
 client <adresse-serveur> <message-a-transmettre>
 ------------------------------------------------------------*/
 #include <stdlib.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include <linux/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
 
 #include <pthread.h>
-#include <ncurses.h>
 
 typedef struct sockaddr
 sockaddr;
